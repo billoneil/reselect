@@ -52,14 +52,18 @@ function getDependencies(funcs) {
 export function createSelectorCreator(memoize, ...memoizeOptions) {
   return (...funcs) => {
     let recomputations = 0
+    let totalComputationTimeMillis = 0
     const resultFunc = funcs.pop()
     const dependencies = getDependencies(funcs)
 
     const memoizedResultFunc = memoize(
       function () {
         recomputations++
-        // apply arguments instead of spreading for performance.
-        return resultFunc.apply(null, arguments)
+        var startTime = performance.now()
+        var result = resultFunc.apply(null, arguments)
+        var endTime = performance.now()
+        totalComputationTimeMillis += endTime - startTime
+        return result
       },
       ...memoizeOptions
     )
@@ -82,6 +86,8 @@ export function createSelectorCreator(memoize, ...memoizeOptions) {
     selector.dependencies = dependencies
     selector.recomputations = () => recomputations
     selector.resetRecomputations = () => recomputations = 0
+    selector.totalComputationTimeMillis = () => totalComputationTimeMillis
+    selector.resetTotalComputationTimeMillis = () => totalComputationTimeMillis = 0
     return selector
   }
 }
